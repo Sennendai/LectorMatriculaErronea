@@ -18,8 +18,15 @@ namespace LectorMatriculaErronea
             ComprobarMatricula(input);
 
             if (!string.IsNullOrEmpty(matriculaEncontrada))
+            {
                 Console.WriteLine("Matricula encontrada: " + matriculaEncontrada);
-            else if (PosiblesMatriculas.Count() != 0)
+
+                matriculaEncontrada = string.Empty;
+                Main(null);
+            }
+
+            ComprobarPosiblesMatricula(input);
+            if (PosiblesMatriculas.Count() != 0)
             {
                 Console.WriteLine("Posibles matricula encontradas: ");
                 foreach (var item in PosiblesMatriculas)
@@ -29,6 +36,9 @@ namespace LectorMatriculaErronea
             }
             else
                 Console.WriteLine("Dios te ayude.");
+
+            PosiblesMatriculas = new List<Matricula>();
+            Main(null);
         }
 
         private static void ComprobarMatricula(string matricula)
@@ -38,10 +48,12 @@ namespace LectorMatriculaErronea
                 if (item.matricula.Equals(matricula))
                 {
                     matriculaEncontrada = item.matricula;
-                    return;
                 }
             }
+        }
 
+        private static void ComprobarPosiblesMatricula(string matricula)
+        {
             foreach (var item in Matriculas)
             {
                 int fallos = DamerauLevenshteinDistance(item.matricula, matricula);
@@ -57,31 +69,42 @@ namespace LectorMatriculaErronea
             int longitudMatrInput = matriculaInput.Length;
             int longitudMatrLista = matriculaLista.Length;
 
-            // + 1 por que se usara la posicion 0 para guardar info de posicion
+            /*********** Distancia Levestein **********/
+            // R|I
+            // D|[i,j]
+            // Replace Insert Delete, se coje la distancia mas pequeña +1 si se realiza una accion de insert/delete
+            // Si se reemplaza se coje en diagonal y +0
+
+            //matriculaLista = "ejemplo";
+            //matriculaInput = "elenco";
+            //  _|_|e|j|e|m|p|l|o            
+            //  _ 0|1|2|3|4|5|6|7
+            //  e 1|0|1|2|3|4|5|6
+            //  l 2|1|1|2|3|4|4|5
+            //  e 3|2|2|1|2|3|4|5
+            //  n 4|3|3|2|2|3|4|5
+            //  c 5|4|4|3|3|3|4|5
+            //  o 6|5|5|4|4|4|4|4 <-- el ultimo valor son los minimos pasos necesarios para pasar de 'ejemplo' a 'elenco'
+
             int[,] distancias = new int[longitudMatrInput + 1, longitudMatrLista + 1];
 
             for (int i = 0; i <= longitudMatrInput; distancias[i, 0] = i++) ;
             for (int j = 0; j <= longitudMatrLista; distancias[0, j] = j++) ;
-                        
+
             for (int i = 1; i <= longitudMatrInput; i++)
             {
                 for (int j = 1; j <= longitudMatrLista; j++)
                 {
                     // diferencia a sumar 0 si es igual
                     int diferencia = matriculaLista[j - 1] == matriculaInput[i - 1] ? 0 : 1;
-
-                    distancias[i, j] = Math.Min(Math.Min(distancias[i - 1, j], distancias[i, j - 1] + 1),
-                                                        distancias[i - 1, j - 1] + diferencia);
+                    // Insert, Delete
+                    // Replace
+                    distancias[i, j] = Math.Min(Math.Min(distancias[i - 1, j] + 1, distancias[i, j - 1] + 1),
+                                                         distancias[i - 1, j - 1] + diferencia);
                 }
             }
 
-            // Se suma la diferencia de longitud de los caracteres por que no se tiene en cuenta si el input es mas largo
-            int diferenciaLongitud = longitudMatrInput - longitudMatrLista;
-            int aDevolver = distancias[longitudMatrInput, longitudMatrLista];
-
-            if (diferenciaLongitud != 0 && diferenciaLongitud > 0) aDevolver += diferenciaLongitud;
-
-            return aDevolver;
+            return distancias[longitudMatrInput, longitudMatrLista];
         }
 
         private static void CrearMatriculas()
