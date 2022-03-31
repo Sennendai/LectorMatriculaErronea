@@ -57,6 +57,7 @@ namespace LectorMatriculaErronea
             int longitudMatrInput = matriculaInput.Length;
             int longitudMatrLista = matriculaLista.Length;
 
+            // + 1 por que se usara la posicion 0 para guardar info de posicion
             int[,] distancias = new int[longitudMatrInput + 1, longitudMatrLista + 1];
 
             for (int i = 0; i <= longitudMatrInput; distancias[i, 0] = i++) ;
@@ -74,11 +75,11 @@ namespace LectorMatriculaErronea
                 }
             }
 
-            // Se suma la diferencia de longitud de los caracteres 
-            int diferenciaLongitud = longitudMatrLista - longitudMatrInput;
+            // Se suma la diferencia de longitud de los caracteres por que no se tiene en cuenta si el input es mas largo
+            int diferenciaLongitud = longitudMatrInput - longitudMatrLista;
             int aDevolver = distancias[longitudMatrInput, longitudMatrLista];
 
-            if (diferenciaLongitud != 0) aDevolver += Math.Abs(diferenciaLongitud);
+            if (diferenciaLongitud != 0 && diferenciaLongitud > 0) aDevolver += diferenciaLongitud;
 
             return aDevolver;
         }
