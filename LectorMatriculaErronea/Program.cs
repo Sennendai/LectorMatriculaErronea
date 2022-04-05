@@ -9,6 +9,9 @@ namespace LectorMatriculaErronea
         private static List<Matricula> Matriculas;
         private static string matriculaEncontrada = string.Empty;
         private static List<Matricula> PosiblesMatriculas = new List<Matricula>();
+        private static char[] palabraPorPasos;
+        private static int[,] matriz;
+
         static void Main(string[] args)
         {
             CrearMatriculas();
@@ -57,7 +60,8 @@ namespace LectorMatriculaErronea
             foreach (var item in Matriculas)
             {
                 int fallos = DamerauLevenshteinDistance(item.matricula, matricula);
-                if (fallos <= 1) PosiblesMatriculas.Add(new Matricula { matricula = item.matricula });
+                if (fallos <= 1)
+                    PosiblesMatriculas.Add(new Matricula { matricula = item.matricula });
             }
         }
 
@@ -65,6 +69,9 @@ namespace LectorMatriculaErronea
         {
             if (string.IsNullOrEmpty(matriculaLista) || string.IsNullOrEmpty(matriculaInput))
                 throw new ArgumentNullException("Esto esta vacio");
+
+            //matriculaLista = "elenco";
+            //matriculaInput = "ejemplo"; 
 
             int longitudMatrInput = matriculaInput.Length;
             int longitudMatrLista = matriculaLista.Length;
@@ -75,8 +82,6 @@ namespace LectorMatriculaErronea
             // Replace Insert Delete, se coje la distancia mas pequeña +1 si se realiza una accion de insert/delete
             // Si se reemplaza se coje en diagonal y +0
 
-            //matriculaLista = "ejemplo";
-            //matriculaInput = "elenco";
             //  _|_|e|j|e|m|p|l|o            
             //  _ 0|1|2|3|4|5|6|7
             //  e 1|0|1|2|3|4|5|6
@@ -101,10 +106,81 @@ namespace LectorMatriculaErronea
                     // Replace
                     distancias[i, j] = Math.Min(Math.Min(distancias[i - 1, j] + 1, distancias[i, j - 1] + 1),
                                                          distancias[i - 1, j - 1] + diferencia);
+
+                    //if (i == longitudMatrInput && j == longitudMatrLista)
+                    //{
+                    //    Console.WriteLine(matriculaLista);
+                    //    palabraPorPasos = matriculaLista.ToCharArray();
+                    //    matriz = distancias;
+                    //    AlgWagnerFisher(longitudMatrInput, longitudMatrLista, matriculaLista, matriculaInput);
+                    //}
                 }
             }
 
             return distancias[longitudMatrInput, longitudMatrLista];
+        }
+
+        private static void AlgWagnerFisher(int filas, int columnas, string original, string input)
+        {
+            if (filas < 0) filas = 0;
+            if (columnas < 0) columnas = 0;
+
+            int diagonal = 0;
+
+            int posicion = matriz[filas, columnas];
+            if (posicion != 0)
+            {
+                if (filas!=0 && columnas!=0) diagonal = matriz[filas - 1, columnas - 1];
+
+                if (posicion == diagonal && diagonal != 0)
+                {
+                    AlgWagnerFisher(filas - 1, columnas - 1, original, input);
+                }
+                else if (filas != 0 && columnas != 0 && diagonal != 0)
+                {
+                    if (columnas == 0)
+                        MoverArriba(filas, columnas, original, input, posicion);
+                    else if (filas == 0)
+                        MoverIzquierda(filas, columnas, original, input, posicion);
+                    else
+                    {
+                        int izquierda = matriz[filas, columnas - 1];
+                        int arriba = matriz[filas - 1, columnas];
+
+                        int decididor = Math.Min(Math.Min(izquierda, arriba), diagonal);
+                        if (decididor == izquierda)
+                            MoverIzquierda(filas, columnas, original, input, posicion);
+                        else if (decididor == arriba)
+                            MoverArriba(filas, columnas, original, input, posicion);
+                        else if (decididor == diagonal)
+                            MoverDiagonal(filas, columnas, original, input, posicion);
+                    }
+                }
+            }
+        }
+
+        private static void MoverArriba(int filas, int columnas, string original, string input, int posicion)
+        {
+            palabraPorPasos = new string(palabraPorPasos).Insert(posicion, input[posicion].ToString()).ToCharArray();
+            Console.WriteLine(new string(palabraPorPasos));
+
+            AlgWagnerFisher(filas - 1, columnas, original, input);
+        }
+
+        private static void MoverIzquierda(int filas, int columnas, string original, string input, int posicion)
+        {
+            palabraPorPasos = new string(palabraPorPasos).Remove(posicion, 1).ToCharArray();
+            Console.WriteLine(new string(palabraPorPasos));
+
+            AlgWagnerFisher(filas, columnas - 1, original, input);
+        }
+
+        private static void MoverDiagonal(int filas, int columnas, string original, string input, int posicion)
+        {
+            palabraPorPasos[columnas - 1] = input[filas - 1];
+            Console.WriteLine(new string(palabraPorPasos));
+
+            AlgWagnerFisher(filas - 1, columnas - 1, original, input);
         }
 
         private static void CrearMatriculas()
